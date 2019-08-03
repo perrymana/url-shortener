@@ -6,12 +6,63 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+#pr:
+#  branches:
+#    include:
+#    - '*'  # must quote since "*" is a YAML reserved character; we want a string
+
 
 variables:
   buildConfiguration: 'Release'
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+#    - script: dotnet restore
+    
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: restore
+#        projects: '**/*.csproj'    
+      
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: build
+#        projects: '**/*.sln'
+        arguments: '--configuration $(buildConfiguration)' 
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: test
+#        projects: '**/*Tests/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'        
+        
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: publish
+#        projects: '**/*.sln'
+        arguments: '--output $(Build.ArtifactStagingDirectory)'               
+        
+    - task: PublishBuildArtifacts@1
+
+stages:
+- stage: Deploy
+  jobs:
+  - deployment: DeployWeb
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    displayName: Deploy Web App
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'dev'
+    strategy:
+      # default deployment strategy, more coming...
+      runOnce:
+        deploy:
+          steps:
+          - script: echo my first deployment    
+      
