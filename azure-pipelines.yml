@@ -50,13 +50,12 @@ stages:
 - stage: Deploy
   jobs:
   - deployment: DeployWeb
-    #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     displayName: Deploy Web App
     pool:
       vmImage: 'ubuntu-latest'
     environment: 'dev'
     strategy:
-      # default deployment strategy, more coming...
       runOnce:
         deploy:
           steps:
