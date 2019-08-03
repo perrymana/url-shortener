@@ -8,6 +8,7 @@ using Cosmonaut;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using UrlShortener.Web.Models;
 
 namespace UrlShortener.Web.Controllers
@@ -18,14 +19,15 @@ namespace UrlShortener.Web.Controllers
     [Produces("application/json")]
     public class ShortenedUrlsController : ControllerBase
     {
-        private readonly ICosmosStore<ShortenedUrl> _urlStore;
+        private readonly ICosmosStore<ShortenedUrl> urlStore;
+        private readonly IConfiguration configuration;
+        public const string AliasRegexStr = "^[a-zA-Z0-9+\\-=]*$"; // TODO - Move
+        public static Regex AliasRegex = new Regex(AliasRegexStr); // TODO - Move
 
-        public const string Base64IshRegexStr = "^[a-zA-Z0-9+\\/=]*$"; // TODO - Move
-        public static Regex Base64IshRegex = new Regex(Base64IshRegexStr); // TODO - Move
-
-        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore)
+        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, IConfiguration configuration)
         {
-            _urlStore = urlStore;
+            this.urlStore = urlStore;
+            this.configuration = configuration;
         }
 
         /// <summary>
@@ -41,12 +43,12 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!Base64IshRegex.IsMatch(id))
+            if (!AliasRegex.IsMatch(id))
             {
                 return BadRequest("Invalid Id Format");
             }
 
-            var shortenedUrl = await _urlStore.FindAsync(id);
+            var shortenedUrl = await urlStore.FindAsync(id);
 
             if (shortenedUrl == null)
             {
@@ -70,7 +72,7 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!Base64IshRegex.IsMatch(id))
+            if (!AliasRegex.IsMatch(id))
             {
                 return BadRequest("Invalid Id Format");
             }
@@ -124,13 +126,13 @@ namespace UrlShortener.Web.Controllers
                 ShortUrl = BuildShortUrl(id)
             };
 
-            await _urlStore.AddAsync(shortenedUrl);
+            await urlStore.AddAsync(shortenedUrl);
             return shortenedUrl;
         }
 
         private string BuildShortUrl(string id)
         {
-            var hostName = "https://localhost:5001"; // TODO
+            var hostName = this.configuration.GetValue<string>("ShortenUrlHostName");  //  "https://localhost:5001"; // TODO
             return hostName + "/" + id;
         }
         
@@ -148,6 +150,9 @@ namespace UrlShortener.Web.Controllers
 
             var hash = sha1.ComputeHash(buffer);
             var hashString = Convert.ToBase64String(hash);
+
+            // Replace "/" with -
+            hashString = hashString.Replace("/", "-");
 
             // Grab the first 8 characters from hash as a our id.
             return hashString.Substring(0, 8);

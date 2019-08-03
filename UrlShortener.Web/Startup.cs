@@ -93,7 +93,7 @@ namespace UrlShortener.Web
 
                 routes.MapRoute(
                     name: "redirecttolongurl",
-                    template: "{id:regex(" + Controllers.ShortenedUrlsController.Base64IshRegexStr + ")}", // HACK
+                    template: "{id:regex(" + Controllers.ShortenedUrlsController.AliasRegexStr + ")}", // HACK
                     defaults: new
                     {
                         controller = "UrlRedirect",
