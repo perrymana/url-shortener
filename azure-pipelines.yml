@@ -65,7 +65,10 @@ stages:
           steps:
           - task: FileTransform@1
             inputs:
-              folderPath: '$(Pipeline.Workspace)/WebApp/*.zip' 
+              folderPath: '$(Pipeline.Workspace)/WebApp/Url.Shortener.Web.zip'
+          - task: FileTransform@1
+            inputs:
+              folderPath: '$(Pipeline.Workspace)/WebApp/Url.Shortener.Redirect.zip'
           - task: AzureRmWebAppDeployment@3
             inputs:
               azureSubscription: '$(azureSubscription)'
