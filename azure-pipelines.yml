@@ -6,12 +6,62 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-latest'
+#pr:
+#  branches:
+#    include:
+#    - '*'  # must quote since "*" is a YAML reserved character; we want a string
+
 
 variables:
   buildConfiguration: 'Release'
+  azureSubscription: 'Azure Subscription'
+  webAppName: 'smallerurl'
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: restore
+      
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: build
+        arguments: '--configuration $(buildConfiguration)' 
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: test
+        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'        
+        
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: publish
+        arguments: '--output $(Build.ArtifactStagingDirectory)/WebApp'               
+        
+    - publish: $(Build.ArtifactStagingDirectory)/WebApp
+      artifact: WebApp
+  
+- stage: Deploy
+  jobs:
+  - deployment: DeployWeb
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    displayName: Deploy Web App
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'dev'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureRmWebAppDeployment@3
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              WebAppName: '$(webAppName)'
+              Package: $(Pipeline.Workspace)/WebApp/*.zip
+      
