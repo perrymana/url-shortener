@@ -55,9 +55,15 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     environment: 'dev'
+    variables:
+    - group: deploy-dev
     strategy:
       runOnce:
         deploy:
+          steps:
+          - task: FileTransform@1
+            inputs:
+              folderPath: '$(Pipeline.Workspace)/WebApp/*.zip' 
           steps:
           - task: AzureRmWebAppDeployment@3
             inputs:
