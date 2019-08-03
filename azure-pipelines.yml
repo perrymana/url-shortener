@@ -14,6 +14,8 @@ trigger:
 
 variables:
   buildConfiguration: 'Release'
+  azureSubscription: 'Azure Subscription'
+  webAppName: 'smallerurl'
 
 stages:
 - stage: Build
@@ -22,38 +24,33 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
-#    - script: dotnet restore
-    
     - task: DotNetCoreCLI@2
       inputs:
         command: restore
-#        projects: '**/*.csproj'    
       
     - task: DotNetCoreCLI@2
       displayName: Build
       inputs:
         command: build
-#        projects: '**/*.sln'
         arguments: '--configuration $(buildConfiguration)' 
 
     - task: DotNetCoreCLI@2
       inputs:
         command: test
-#        projects: '**/*Tests/*.csproj'
         arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'        
         
     - task: DotNetCoreCLI@2
       inputs:
         command: publish
-#        projects: '**/*.sln'
-        arguments: '--output $(Build.ArtifactStagingDirectory)'               
+        arguments: '--output $(Build.ArtifactStagingDirectory)/WebApp'               
         
-    - task: PublishBuildArtifacts@1
-
+    - publish: $(Build.ArtifactStagingDirectory)/WebApp
+      artifact: WebApp
+  
 - stage: Deploy
   jobs:
   - deployment: DeployWeb
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     displayName: Deploy Web App
     pool:
       vmImage: 'ubuntu-latest'
@@ -63,5 +60,9 @@ stages:
       runOnce:
         deploy:
           steps:
-          - script: echo my first deployment    
+          - task: AzureRmWebAppDeployment@3
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              WebAppName: '$(webAppName)'
+              Package: $(Pipeline.Workspace)/WebApp/*.zip
       
