@@ -50,7 +50,6 @@ stages:
         
     - task: PublishBuildArtifacts@1
 
-stages:
 - stage: Deploy
   jobs:
   - deployment: DeployWeb
