@@ -4,7 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Cosmonaut;
 using Microsoft.AspNetCore.Mvc;
-using UrlShortener.Web.Models;
+using UrlShortener.Common.Data;
+using UrlShortener.Common.Validation;
 
 namespace UrlShortener.Web.Controllers
 {
@@ -23,6 +24,11 @@ namespace UrlShortener.Web.Controllers
             var shortenedUrl = await _urlStore.FindAsync(id);
 
             if (shortenedUrl == null)
+            {
+                return NotFound();
+            }
+
+            if (!AliasValidation.IsValid(id))
             {
                 return NotFound();
             }

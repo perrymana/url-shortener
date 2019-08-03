@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using UrlShortener.Common.Data;
+using UrlShortener.Common.Validation;
 using UrlShortener.Web.Models;
 
 namespace UrlShortener.Web.Controllers
@@ -21,8 +23,6 @@ namespace UrlShortener.Web.Controllers
     {
         private readonly ICosmosStore<ShortenedUrl> urlStore;
         private readonly IConfiguration configuration;
-        public const string AliasRegexStr = "^[a-zA-Z0-9+\\-=]*$"; // TODO - Move
-        public static Regex AliasRegex = new Regex(AliasRegexStr); // TODO - Move
 
         public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, IConfiguration configuration)
         {
@@ -43,7 +43,7 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasRegex.IsMatch(id))
+            if (!AliasValidation.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }
@@ -72,7 +72,7 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasRegex.IsMatch(id))
+            if (!AliasValidation.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }

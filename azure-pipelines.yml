@@ -16,6 +16,7 @@ variables:
   buildConfiguration: 'Release'
   azureSubscription: 'Azure Subscription'
   webAppName: 'smallerurl'
+  redirectAppName: 'smul'
 
 stages:
 - stage: Build
@@ -46,6 +47,7 @@ stages:
         
     - publish: $(Build.ArtifactStagingDirectory)/WebApp
       artifact: WebApp
+
   
 - stage: Deploy
   jobs:
@@ -68,5 +70,9 @@ stages:
             inputs:
               azureSubscription: '$(azureSubscription)'
               WebAppName: '$(webAppName)'
-              Package: $(Pipeline.Workspace)/WebApp/*.zip
-      
+              Package: $(Pipeline.Workspace)/WebApp/Url.Shortener.Web.zip
+          - task: AzureRmWebAppDeployment@3
+            inputs:
+              azureSubscription: '$(azureSubscription)'
+              WebAppName: '$(redirectAppName)'
+              Package: $(Pipeline.Workspace)/WebApp/Url.Shortener.Redirect.zip

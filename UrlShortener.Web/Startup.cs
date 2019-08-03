@@ -13,6 +13,8 @@ using System.IO;
 using System;
 using Cosmonaut.Extensions.Microsoft.DependencyInjection;
 using Cosmonaut;
+using UrlShortener.Common.Config;
+using UrlShortener.Common.Data;
 
 namespace UrlShortener.Web
 {
@@ -91,21 +93,22 @@ namespace UrlShortener.Web
                 //    name: "default",
                 //    template: "{controller}/{action=Index}/{id?}");
 
-                routes.MapRoute(
-                    name: "redirecttolongurl",
-                    template: "{id:regex(" + Controllers.ShortenedUrlsController.AliasRegexStr + ")}", // HACK
-                    defaults: new
-                    {
-                        controller = "UrlRedirect",
-                        action = "RedirectToLongUrl"
-                    }
-                );
+                //routes.MapRoute(
+                //    name: "redirecttolongurl",
+                //    template: "{id:regex(" + Controllers.ShortenedUrlsController.AliasRegexStr + ")}", // HACK
+                //    defaults: new
+                //    {
+                //        controller = "UrlRedirect",
+                //        action = "RedirectToLongUrl"
+                //    }
+                //);
 
             });
 
             app.UseSpa(spa =>
             {
                 spa.Options.SourcePath = "ClientApp";
+                //spa.Options.
 
                 if (env.IsDevelopment())
                 {
