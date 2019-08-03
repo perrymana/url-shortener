@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Cosmonaut;
 using Microsoft.AspNetCore.Mvc;
 using UrlShortener.Web.Models;
 
@@ -9,17 +10,17 @@ namespace UrlShortener.Web.Controllers
 {
     public class UrlRedirectController : Controller
     {
-        private readonly UrlShortenerWebContext _context;
+        private readonly ICosmosStore<ShortenedUrl> _urlStore;
 
-        public UrlRedirectController(UrlShortenerWebContext context)
+        public UrlRedirectController(ICosmosStore<ShortenedUrl> urlStore)
         {
-            _context = context;
+            _urlStore = urlStore;
         }
 
 
-        public async Task<IActionResult> RedirectToLongUrl(string alias)
+        public async Task<IActionResult> RedirectToLongUrl(string id)
         {
-            var shortenedUrl = await _context.ShortenedUrl.FindAsync(alias);
+            var shortenedUrl = await _urlStore.FindAsync(id);
 
             if (shortenedUrl == null)
             {

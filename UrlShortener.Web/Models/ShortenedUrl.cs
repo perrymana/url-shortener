@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cosmonaut;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -6,13 +7,12 @@ using System.Threading.Tasks;
 
 namespace UrlShortener.Web.Models
 {
-    public class ShortenedUrl
+    public class ShortenedUrl 
     {
         /// <summary>
         /// Url alias that gets added to the hostname
         /// </summary>
-        [Key]
-        public string Alias { get; set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// The shortened url

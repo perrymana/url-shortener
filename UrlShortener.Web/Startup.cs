@@ -11,6 +11,8 @@ using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.IO;
 using System;
+using Cosmonaut.Extensions.Microsoft.DependencyInjection;
+using Cosmonaut;
 
 namespace UrlShortener.Web
 {
@@ -34,8 +36,15 @@ namespace UrlShortener.Web
                 configuration.RootPath = "ClientApp/build";
             });
 
-            services.AddDbContext<UrlShortenerWebContext>(options =>
-                    options.UseSqlServer(Configuration.GetConnectionString("UrlShortenerWebContext")));
+            var cosmosConfig = Configuration.GetSection("Cosmos").Get<CosmosConfig>();
+            var cosmosSettings = new CosmosStoreSettings(cosmosConfig.DatabaseName, cosmosConfig.CosmosUri, cosmosConfig.AuthKey, settings =>
+            {
+                //settings.ConnectionPolicy = connectionPolicy;
+                //settings.DefaultCollectionThroughput = 5000;
+                //settings.IndexingPolicy = new IndexingPolicy(new RangeIndex(DataType.Number, -1),
+                //    new RangeIndex(DataType.String, -1));
+            });
+            services.AddCosmosStore<ShortenedUrl>(cosmosSettings);
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
@@ -84,7 +93,7 @@ namespace UrlShortener.Web
 
                 routes.MapRoute(
                     name: "redirecttolongurl",
-                    template: "{alias}",
+                    template: "{id:regex(" + Controllers.ShortenedUrlsController.Base64IshRegexStr + ")}", // HACK
                     defaults: new
                     {
                         controller = "UrlRedirect",

@@ -8,27 +8,27 @@
             <summary>
             Retreives the details of an existing shortened url
             </summary>
-            <param name="alias">Url alias that gets added to the hostname</param>
+            <param name="id">Url id that gets added to the hostname</param>
             <returns></returns>
         </member>
         <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.PutShortenedUrl(System.String,UrlShortener.Web.Models.NewShortenedUrl)">
             <summary>
-            Creates new shortened url with supplied alias
+            Creates new shortened url with supplied id
             </summary>
-            <param name="alias">Url alias that gets added to the hostname</param>
+            <param name="id">Url id that gets added to the hostname</param>
             <param name="newShortenedUrl">Object containing the url to shorten</param>
             <returns></returns>
         </member>
         <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.PostShortenedUrl(UrlShortener.Web.Models.NewShortenedUrl)">
             <summary>
-            Creates new shortened url with random alias
+            Creates new shortened url with random id
             </summary>
             <param name="newShortenedUrl">Object containing the url to shorten</param>
             <returns></returns>
         </member>
-        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.GenerateNewAlias">
+        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.GenerateNewId">
             <summary>
-            Generates a new alias for a short url. Utilises a hashing algorithm to generate random "enough" strings.
+            Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
             </summary>
             <returns></returns>
         </member>
@@ -37,7 +37,7 @@
             The long url to shorten
             </summary>
         </member>
-        <member name="P:UrlShortener.Web.Models.ShortenedUrl.Alias">
+        <member name="P:UrlShortener.Web.Models.ShortenedUrl.Id">
             <summary>
             Url alias that gets added to the hostname
             </summary>
