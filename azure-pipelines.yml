@@ -25,27 +25,38 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core sdk '
+      inputs:
+        packageType: sdk
+        version: 2.2.401
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Restore'
       inputs:
         command: restore
       
     - task: DotNetCoreCLI@2
-      displayName: Build
+      displayName: 'DotNet Build''
       inputs:
         command: build
         arguments: '--configuration $(buildConfiguration)' 
 
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Test'
       inputs:
         command: test
         arguments: '--configuration $(buildConfiguration) --collect "XPlat Code Coverage"'        
         
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Publish'
       inputs:
         command: publish
         arguments: '--output $(Build.ArtifactStagingDirectory)/WebApp'               
         
     - publish: $(Build.ArtifactStagingDirectory)/WebApp
+      displayName: 'Publish Artifacts'
       artifact: WebApp
 
   
