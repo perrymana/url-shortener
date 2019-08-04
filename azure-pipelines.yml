@@ -38,7 +38,7 @@ stages:
     - task: DotNetCoreCLI@2
       inputs:
         command: test
-        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'        
+        arguments: '--configuration $(buildConfiguration) --collect "XPlat Code Coverage"'        
         
     - task: DotNetCoreCLI@2
       inputs:
