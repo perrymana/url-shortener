@@ -109,10 +109,11 @@ namespace UrlShortener.Web.Controllers
             }
 
             // See if we have already registered this particular url. If we have return it without generating a new one.
+
+            // Unfortunately I can't get the async versions to work...
             //var shortenedUrl = await urlStore.Query().FirstOrDefaultAsync(x => x.LongUrl == newShortenedUrl.LongUrl);
             var shortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
-            //var shortenedUrl = urlStore.Query().FirstOrDefault(x => x.LongUrl == newShortenedUrl.LongUrl);
-            //var shortenedUrl = urlStore.Query("select * from c where c.LongUrl = @longUrl", new { longUrl = newShortenedUrl.LongUrl }).FirstOrDefault();
+
             if (shortenedUrl  == null)
             {
                 var id = GenerateNewId();
