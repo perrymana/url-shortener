@@ -141,7 +141,7 @@ namespace UrlShortener.Web.Controllers
             }
 
             var id = shortUrlGenerator.GenerateNewId();
-            // TODO - Geneate a different id if it already exists?
+            // TODO - Generate a different id if it already exists?
             var shortenedUrl = await CreateNew(id, newShortenedUrl);
 
             return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);

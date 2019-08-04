@@ -37,6 +37,21 @@ namespace UrlShortener.Web.Tests
             }
 
             [Fact]
+            public async Task WhenModelStateInvalid_ReturnBadRequest()
+            {
+                // Setup
+                sut.ModelState.AddModelError("LongUrl", "The LongUrl field is required.");
+
+                // Action
+                var actionResult = await sut.GetShortenedUrl("invalidId");
+
+                // Assert
+                Assert.NotNull(actionResult);
+                Assert.NotNull(actionResult.Result);
+                Assert.IsType<BadRequestObjectResult>(actionResult.Result);
+            }
+
+            [Fact]
             public async Task WhenInvalidIdSupplied_ReturnBadRequest()
             {
                 // Setup
@@ -112,6 +127,21 @@ namespace UrlShortener.Web.Tests
                 config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
 
                 sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object, mockGenerator.Object);
+            }
+
+            [Fact]
+            public async Task WhenModelStateInvalid_ReturnBadRequest()
+            {
+                // Setup
+                sut.ModelState.AddModelError("LongUrl", "The LongUrl field is required.");
+
+                // Action
+                var actionResult = await sut.PutShortenedUrl("invalidId", new Models.NewShortenedUrl() { LongUrl = "https://my.long.url/?abc" });
+
+                // Assert
+                Assert.NotNull(actionResult);
+                Assert.NotNull(actionResult.Result);
+                Assert.IsType<BadRequestObjectResult>(actionResult.Result);
             }
 
             [Fact]
@@ -217,6 +247,21 @@ namespace UrlShortener.Web.Tests
                 config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
 
                 sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object, mockGenerator.Object);
+            }
+
+            [Fact]
+            public async Task WhenModelStateInvalid_ReturnBadRequest()
+            {
+                // Setup
+                sut.ModelState.AddModelError("LongUrl", "The LongUrl field is required."); 
+
+                // Action
+                var actionResult = await sut.PostShortenedUrl(new Models.NewShortenedUrl() { LongUrl = "https://my.long.url/?abc" });
+
+                // Assert
+                Assert.NotNull(actionResult);
+                Assert.NotNull(actionResult.Result);
+                Assert.IsType<BadRequestObjectResult>(actionResult.Result);
             }
 
             [Fact]
