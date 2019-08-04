@@ -8,6 +8,5 @@ export default () => (
   <Layout>
         <Route exact path='/' component={UrlShortener} />
         <Route exact path='/apidetails' component={ApiDetails} />
-        
   </Layout>
 );

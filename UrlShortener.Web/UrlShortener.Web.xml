@@ -4,6 +4,11 @@
         <name>UrlShortener.Web</name>
     </assembly>
     <members>
+        <member name="T:UrlShortener.Web.Controllers.ShortenedUrlsController">
+            <summary>
+            Primary API Controller for creating and retrieving shortened urls.
+            </summary>
+        </member>
         <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.GetShortenedUrl(System.String)">
             <summary>
             Retreives the details of an existing shortened url
@@ -13,7 +18,7 @@
         </member>
         <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.PutShortenedUrl(System.String,UrlShortener.Web.Models.NewShortenedUrl)">
             <summary>
-            Creates new shortened url with supplied id
+            Creates new shortened url with a supplied id
             </summary>
             <param name="id">Url id that gets added to the hostname</param>
             <param name="newShortenedUrl">Object containing the url to shorten</param>
@@ -21,21 +26,42 @@
         </member>
         <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.PostShortenedUrl(UrlShortener.Web.Models.NewShortenedUrl)">
             <summary>
-            Creates new shortened url with random id
+            Creates new shortened url with a random id
             </summary>
             <param name="newShortenedUrl">Object containing the url to shorten</param>
             <returns></returns>
         </member>
-        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.GenerateNewId">
+        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.CreateNew(System.String,UrlShortener.Web.Models.NewShortenedUrl)">
             <summary>
-            Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
+            Creates new entry in data store
             </summary>
+            <param name="id"></param>
+            <param name="newShortenedUrl"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.BuildShortUrl(System.String)">
+            <summary>
+            Combines short url id with the root hostname.
+            </summary>
+            <param name="id"></param>
             <returns></returns>
         </member>
         <member name="P:UrlShortener.Web.Models.NewShortenedUrl.LongUrl">
             <summary>
             The long url to shorten
             </summary>
+        </member>
+        <member name="M:UrlShortener.Web.Services.HashUrlGenerator.GenerateNewId">
+            <summary>
+            Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:UrlShortener.Web.Services.IShortUrlGenerator.GenerateNewId">
+            <summary>
+            Generates a new id for a short url
+            </summary>
+            <returns></returns>
         </member>
     </members>
 </doc>

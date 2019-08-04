@@ -13,10 +13,11 @@ using UrlShortener.Common.Data;
 using Cosmonaut;
 using Cosmonaut.Extensions.Microsoft.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using UrlShortener.Common.Validation;
 
 namespace UrlShortener.Redirect
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration, ILogger<Startup> logger)
         {
@@ -28,58 +29,17 @@ namespace UrlShortener.Redirect
         public ILogger<Startup> Logger { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
-            var cosmosConfig = Configuration.GetSection("Cosmos")?.Get<CosmosConfig>();
-
-            this.Logger.LogInformation("Connecting to Cosmos DB {DatabaseName} at {CosmosUri}", cosmosConfig?.DatabaseName, cosmosConfig?.CosmosUri);
-            if (cosmosConfig == null || string.IsNullOrEmpty(cosmosConfig.DatabaseName) || string.IsNullOrEmpty(cosmosConfig.CosmosUri) || string.IsNullOrEmpty(cosmosConfig.AuthKey))
-            {
-                throw new ApplicationException("Cosmos Configuration Invalid");
-            }
-
-            var cosmosSettings = new CosmosStoreSettings(cosmosConfig.DatabaseName, cosmosConfig.CosmosUri, cosmosConfig.AuthKey, settings =>
-            {
-                //settings.ConnectionPolicy = connectionPolicy;
-                //settings.DefaultCollectionThroughput = 5000;
-                //settings.IndexingPolicy = new IndexingPolicy(new RangeIndex(DataType.Number, -1),
-                //    new RangeIndex(DataType.String, -1));
-            });
-            services.AddCosmosStore<ShortenedUrl>(cosmosSettings);
-
+            ConfigureServicesDI(services);
+            ConfigureServicesMvc(services);
+            ConfigureServicesDatabase(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "redirecttolongurl",
-                    template: "{id}", 
-                    defaults: new
-                    {
-                        controller = "UrlRedirect",
-                        action = "RedirectToLongUrl"
-                    }
-                );
-
-            });
+            ConfigureMvc(app, env);
         }
     }
 }

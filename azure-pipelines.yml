@@ -25,30 +25,56 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET Core SDK'
+      inputs:
+        packageType: sdk
+        version: 2.2.401
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Restore'
       inputs:
         command: restore
       
     - task: DotNetCoreCLI@2
-      displayName: Build
+      displayName: 'DotNet Build'
       inputs:
         command: build
         arguments: '--configuration $(buildConfiguration)' 
 
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Test'
       inputs:
         command: test
-        arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'        
-        
+        arguments: '--configuration $(buildConfiguration) --collect "XPlat Code Coverage"'        
+
     - task: DotNetCoreCLI@2
+      displayName: 'DotNet Publish'
       inputs:
         command: publish
         arguments: '--output $(Build.ArtifactStagingDirectory)/WebApp'               
         
     - publish: $(Build.ArtifactStagingDirectory)/WebApp
+      displayName: 'Publish Artifacts'
       artifact: WebApp
 
-  
+    - task: Palmmedia.reportgenerator.reportgenerator-build-release-task.reportgenerator@4
+      displayName: Merge Test Coverage Results
+      inputs:
+        reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        targetdir: '$(Agent.TempDirectory)/MergedCodeCoverage'
+        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;Badges'
+        assemblyfilters: '-xunit*'
+
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage'
+      inputs:
+        codeCoverageTool: 'cobertura'
+        summaryFileLocation: '$(Agent.TempDirectory)/MergedCodeCoverage/Cobertura.xml'
+        reportDirectory: '$(Agent.TempDirectory)/MergedCodeCoverage'  
+
+
 - stage: Deploy
   jobs:
   - deployment: DeployWeb

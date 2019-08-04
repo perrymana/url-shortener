@@ -9,12 +9,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
 using UrlShortener.Common.Validation;
 using UrlShortener.Web.Models;
+using UrlShortener.Web.Services;
 
 namespace UrlShortener.Web.Controllers
 {
+    /// <summary>
+    /// Primary API Controller for creating and retrieving shortened urls.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Consumes("application/json")]
@@ -22,12 +27,16 @@ namespace UrlShortener.Web.Controllers
     public class ShortenedUrlsController : ControllerBase
     {
         private readonly ICosmosStore<ShortenedUrl> urlStore;
-        private readonly IConfiguration configuration;
+        private readonly SiteConfig configuration;
+        private readonly IAliasValidator validator;
+        private readonly IShortUrlGenerator shortUrlGenerator;
 
-        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, IConfiguration configuration)
+        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, SiteConfig configuration, IAliasValidator validator, IShortUrlGenerator shortUrlGenerator)
         {
             this.urlStore = urlStore;
             this.configuration = configuration;
+            this.validator = validator;
+            this.shortUrlGenerator = shortUrlGenerator;
         }
 
         /// <summary>
@@ -36,6 +45,9 @@ namespace UrlShortener.Web.Controllers
         /// <param name="id">Url id that gets added to the hostname</param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> GetShortenedUrl([FromRoute] string id)
         {
             if (!ModelState.IsValid)
@@ -43,7 +55,7 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasValidation.IsValid(id))
+            if (!validator.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }
@@ -59,12 +71,16 @@ namespace UrlShortener.Web.Controllers
         }
 
         /// <summary>
-        /// Creates new shortened url with supplied id
+        /// Creates new shortened url with a supplied id
         /// </summary>
         /// <param name="id">Url id that gets added to the hostname</param>
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> PutShortenedUrl([FromRoute] string id, [FromBody] NewShortenedUrl newShortenedUrl)
         {
             if (!ModelState.IsValid)
@@ -72,35 +88,40 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasValidation.IsValid(id))
+            if (!validator.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }
 
-            try
+            // Check to see if a shortened url with this id already exists.
+            // (Yeah, there is a minor race condition here)
+            var existingShortenedUrl = await urlStore.FindAsync(id);
+            if (existingShortenedUrl != null)
             {
-                ShortenedUrl shortenedUrl = await CreateNew(id, newShortenedUrl);
-                return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
-            }
-            catch (DbUpdateException e)
-            {
-                if (e.InnerException?.Message.Contains("Violation of PRIMARY KEY constraint", StringComparison.InvariantCultureIgnoreCase) == true)
+                // It does, but does the long url match?
+                if (existingShortenedUrl.LongUrl == newShortenedUrl.LongUrl)
                 {
-                    return Conflict("Already exists");
+                    return Ok(existingShortenedUrl);
                 }
                 else
                 {
-                    throw;
+                    return Conflict("Already exists");
                 }
             }
+
+            ShortenedUrl shortenedUrl = await CreateNew(id, newShortenedUrl);
+            return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
 
         /// <summary>
-        /// Creates new shortened url with random id
+        /// Creates new shortened url with a random id
         /// </summary>
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
         /// <returns></returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> PostShortenedUrl([FromBody] NewShortenedUrl newShortenedUrl)
         {
             if (!ModelState.IsValid)
@@ -109,22 +130,29 @@ namespace UrlShortener.Web.Controllers
             }
 
             // See if we have already registered this particular url. If we have return it without generating a new one.
+            // (Yeah, there is a minor race condition here)
 
             // Unfortunately I can't get the async versions to work...
             //var shortenedUrl = await urlStore.Query().FirstOrDefaultAsync(x => x.LongUrl == newShortenedUrl.LongUrl);
-            var shortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
-
-            if (shortenedUrl  == null)
+            var existingShortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
+            if (existingShortenedUrl != null)
             {
-                var id = GenerateNewId();
-                // TODO - Geneate a different id if it already exists?
-
-                shortenedUrl = await CreateNew(id, newShortenedUrl);
+                return Ok(existingShortenedUrl);
             }
+
+            var id = shortUrlGenerator.GenerateNewId();
+            // TODO - Generate a different id if it already exists?
+            var shortenedUrl = await CreateNew(id, newShortenedUrl);
 
             return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
 
+        /// <summary>
+        /// Creates new entry in data store
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="newShortenedUrl"></param>
+        /// <returns></returns>
         private async Task<ShortenedUrl> CreateNew(string id, NewShortenedUrl newShortenedUrl)
         {
             var shortenedUrl = new ShortenedUrl()
@@ -138,37 +166,16 @@ namespace UrlShortener.Web.Controllers
             return shortenedUrl;
         }
 
+        /// <summary>
+        /// Combines short url id with the root hostname.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private string BuildShortUrl(string id)
         {
-            var hostName = this.configuration.GetValue<string>("ShortenUrlHostName");  //  "https://localhost:5001"; // TODO
+            var hostName = this.configuration.ShortenUrlHostName;
             return hostName + "/" + id;
         }
         
-        /// <summary>
-        /// Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
-        /// </summary>
-        /// <returns></returns>
-        private string GenerateNewId()
-        {
-            // TEMP - HashLongUrl
-            //byte[] buffer = Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToByteArray);
-            byte[] buffer = System.Guid.NewGuid().ToByteArray();
-
-            var sha1 = System.Security.Cryptography.SHA1.Create();
-
-            var hash = sha1.ComputeHash(buffer);
-            var hashString = Convert.ToBase64String(hash);
-
-            // Replace "/" with -
-            hashString = hashString.Replace("/", "-");
-
-            // Grab the first 8 characters from hash as a our id.
-            return hashString.Substring(0, 8);
-        }
-
-        //private bool ShortenedUrlExists(string id)
-        //{
-        //    return _context.ShortenedUrl.Any(e => e.Id == id);
-        //}
     }
 }

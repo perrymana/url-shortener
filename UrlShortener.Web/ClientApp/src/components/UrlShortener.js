@@ -1,5 +1,4 @@
 ﻿import React from 'react'
-import PropTypes from 'prop-types'
 
 export default class UrlShortener extends React.Component {
     constructor(props) {
@@ -19,14 +18,26 @@ export default class UrlShortener extends React.Component {
     async createShortUrl(event) {
         event.preventDefault();
 
-        this.setState({ shortenedUrl: shortenedUrl, error: '' });
+        var url = this.state.longUrl;
+        if (!url) {
+            this.setState({ shortenedUrl: null, error: 'Url not provided' });
+            return;
+        }
+
+        if (!url.includes(".")) {
+            // Yeah... this is pretty basic...
+            this.setState({ shortenedUrl: null, error: 'Invalid url' });
+            return;
+        }
 
         // Add "http://" prefix if it hasn't been specified.
-        var url = this.state.longUrl;
         if (!url.toLowerCase().startsWith("http://") && !url.toLowerCase().startsWith("https://"))
         {
             url = "http://" + url;
         }
+
+        // Clear previous result before calling server.
+        this.setState({ shortenedUrl: null, error: '' });
 
         try {
             let response = await fetch('api/ShortenedUrls', {
@@ -75,15 +86,15 @@ export default class UrlShortener extends React.Component {
             <div>
                 <h3>Create new short url</h3>
                 <form onSubmit={this.createShortUrl}>
-                    <div class="form-group">
-                        <label for="longUrl">
+                    <div className="form-group">
+                        <label htmlFor="longUrl">
                             Enter a long URL to make smaller:
                         </label>
-                        <input type="text" class="form-control" name="longUrl" placeholder="enter long url" value={this.state.longUrl} onChange={this.handleChange} />
+                        <input type="text" className="form-control" name="longUrl" placeholder="enter long url" value={this.state.longUrl} onChange={this.handleChange} />
                         <span>{this.state.error}</span>
                     </div>
-                    <div class="form-group">
-                        <input type="submit" class="btn btn-primary" value="Smallify!" />
+                    <div className="form-group">
+                        <input type="submit" className="btn btn-primary" value="Smallify!" />
                     </div>
                 </form>
                 {shortUrlDiv}
