@@ -48,7 +48,7 @@ stages:
       inputs:
         command: test
         arguments: '--configuration $(buildConfiguration) --collect "XPlat Code Coverage"'        
-        
+
     - task: DotNetCoreCLI@2
       displayName: 'DotNet Publish'
       inputs:
@@ -59,6 +59,11 @@ stages:
       displayName: 'Publish Artifacts'
       artifact: WebApp
 
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Code Coverage'
+      inputs:
+        codeCoverageTool: 'cobertura'
+        summaryFileLocation: $(System.DefaultWorkingDirectory)/**/coverage.cobertura.xml
   
 - stage: Deploy
   jobs:
