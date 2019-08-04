@@ -8,7 +8,7 @@ export default props => (
   <Navbar inverse fixedTop fluid collapseOnSelect>
     <Navbar.Header>
       <Navbar.Brand>
-        <Link to={'/'}>UrlShortener.Web</Link>
+        <Link to={'/'}>Smaller Url</Link>
       </Navbar.Brand>
       <Navbar.Toggle />
     </Navbar.Header>
@@ -19,14 +19,9 @@ export default props => (
             <Glyphicon glyph='home' /> Home
           </NavItem>
         </LinkContainer>
-        <LinkContainer to={'/counter'}>
+        <LinkContainer to={'/apidetails'}>
           <NavItem>
-            <Glyphicon glyph='education' /> Counter
-          </NavItem>
-        </LinkContainer>
-        <LinkContainer to={'/fetchdata'}>
-          <NavItem>
-            <Glyphicon glyph='th-list' /> Fetch data
+             <Glyphicon glyph='cog' /> API Details
           </NavItem>
         </LinkContainer>
       </Nav>
