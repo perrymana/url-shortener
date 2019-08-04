@@ -31,16 +31,6 @@
             The long url to shorten
             </summary>
         </member>
-        <member name="P:UrlShortener.Web.Models.PutShortenedUrlRequest.id">
-            <summary>
-            Url id that gets added to the hostname
-            </summary>
-        </member>
-        <member name="P:UrlShortener.Web.Models.PutShortenedUrlRequest.LongUrl">
-            <summary>
-            The long url to shorten
-            </summary>
-        </member>
         <member name="M:UrlShortener.Web.Services.HashUrlGenerator.GenerateNewId">
             <summary>
             Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.

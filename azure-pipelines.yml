@@ -26,7 +26,7 @@ stages:
       vmImage: 'ubuntu-latest'
     steps:
     - task: UseDotNet@2
-      displayName: 'Install .NET Core sdk '
+      displayName: 'Install .NET Core SDK'
       inputs:
         packageType: sdk
         version: 2.2.401
@@ -38,7 +38,7 @@ stages:
         command: restore
       
     - task: DotNetCoreCLI@2
-      displayName: 'DotNet Build''
+      displayName: 'DotNet Build'
       inputs:
         command: build
         arguments: '--configuration $(buildConfiguration)' 
