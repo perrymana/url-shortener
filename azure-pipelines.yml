@@ -74,8 +74,10 @@ stages:
               azureSubscription: '$(azureSubscription)'
               WebAppName: '$(webAppName)'
               Package: $(Pipeline.Workspace)/WebApp/UrlShortener.Web.zip
+              RemoveAdditionalFilesFlag: true
           - task: AzureRmWebAppDeployment@3
             inputs:
               azureSubscription: '$(azureSubscription)'
               WebAppName: '$(redirectAppName)'
               Package: $(Pipeline.Workspace)/WebApp/UrlShortener.Redirect.zip
+              RemoveAdditionalFilesFlag: true
