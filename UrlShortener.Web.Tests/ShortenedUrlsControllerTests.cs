@@ -10,6 +10,7 @@ using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
 using UrlShortener.Common.Validation;
 using UrlShortener.Web.Controllers;
+using UrlShortener.Web.Services;
 using Xunit;
 
 namespace UrlShortener.Web.Tests
@@ -19,19 +20,29 @@ namespace UrlShortener.Web.Tests
 
         public class GetShortenedUrl
         {
+            private Mock<ICosmosStore<ShortenedUrl>> mockStore;
+            private Mock<IAliasValidator> mockValidator;
+            private Mock<IShortUrlGenerator> mockGenerator;
+            private SiteConfig config;
+            private ShortenedUrlsController sut;
+
+            public GetShortenedUrl()
+            {
+                mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
+                mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
+                mockGenerator = new Mock<IShortUrlGenerator>(MockBehavior.Strict);
+                config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
+
+                sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object, mockGenerator.Object);
+            }
 
             [Fact]
             public async Task WhenInvalidIdSupplied_ReturnBadRequest()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("invalidId")).Returns(false);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.GetShortenedUrl("invalidId");
 
                 // Assert
@@ -44,16 +55,11 @@ namespace UrlShortener.Web.Tests
             public async Task WhenIdNotFound_ReturnNotFound()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.FindAsync("validId", null, CancellationToken.None)).ReturnsAsync((ShortenedUrl)null);
 
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("validId")).Returns(true);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.GetShortenedUrl("validId");
 
                 // Assert
@@ -66,7 +72,6 @@ namespace UrlShortener.Web.Tests
             public async Task WhenIdFound_ReturnShortendUrl()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.FindAsync("validId", null, CancellationToken.None)).ReturnsAsync(new ShortenedUrl()
                 {
                     Id = "validId",
@@ -74,13 +79,9 @@ namespace UrlShortener.Web.Tests
                     LongUrl = "http://mylongurl.com/abc/?id=zyx"
                 });
 
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("validId")).Returns(true);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.GetShortenedUrl("validId");
 
                 // Assert
@@ -97,18 +98,29 @@ namespace UrlShortener.Web.Tests
 
         public class PutShortenedUrl
         {
+            private Mock<ICosmosStore<ShortenedUrl>> mockStore;
+            private Mock<IAliasValidator> mockValidator;
+            private Mock<IShortUrlGenerator> mockGenerator;
+            private SiteConfig config;
+            private ShortenedUrlsController sut;
+
+            public PutShortenedUrl()
+            {
+                mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
+                mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
+                mockGenerator = new Mock<IShortUrlGenerator>(MockBehavior.Strict);
+                config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
+
+                sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object, mockGenerator.Object);
+            }
+
             [Fact]
             public async Task WhenInvalidIdSupplied_ReturnBadRequest()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("invalidId")).Returns(false);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PutShortenedUrl("invalidId", new Models.NewShortenedUrl() { LongUrl = "https://my.long.url/?abc" });
 
                 // Assert
@@ -121,7 +133,6 @@ namespace UrlShortener.Web.Tests
             public async Task WhenExistingIdWithSameLongUrlFound_ReturnOk()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.FindAsync("validId", null, CancellationToken.None)).ReturnsAsync(new ShortenedUrl()
                 {
                     Id = "validId",
@@ -129,13 +140,9 @@ namespace UrlShortener.Web.Tests
                     LongUrl = "http://mylongurl.com/abc/?id=zyx"
                 });
 
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("validId")).Returns(true);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PutShortenedUrl("validId", new Models.NewShortenedUrl() { LongUrl = "http://mylongurl.com/abc/?id=zyx" });
 
                 // Assert
@@ -152,7 +159,6 @@ namespace UrlShortener.Web.Tests
             public async Task WhenExistingIdWithDifferentLongUrlFound_ReturnConflict()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.FindAsync("validId", null, CancellationToken.None)).ReturnsAsync(new ShortenedUrl()
                 {
                     Id = "validId",
@@ -160,13 +166,9 @@ namespace UrlShortener.Web.Tests
                     LongUrl = "http://mylongurl.com/abc/?id=zyx"
                 });
 
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("validId")).Returns(true);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PutShortenedUrl("validId", new Models.NewShortenedUrl() { LongUrl = "http://mydifferentlongurl.com/abc/?id=zyx" });
 
                 // Assert
@@ -179,18 +181,13 @@ namespace UrlShortener.Web.Tests
             public async Task WhenNewIdSupplied_Creates_And_ReturnCreated()
             {
                 // Setup
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.FindAsync("validId", null, CancellationToken.None)).ReturnsAsync((ShortenedUrl)null);
                 mockStore.Setup(_ => _.AddAsync(It.Is<ShortenedUrl>(x => x.Id == "validId"), null, CancellationToken.None))
                     .ReturnsAsync((Cosmonaut.Response.CosmosResponse<ShortenedUrl>)null);
 
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
                 mockValidator.Setup(_ => _.IsValid("validId")).Returns(true);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PutShortenedUrl("validId", new Models.NewShortenedUrl() { LongUrl = "http://mylongurl.com/abc/?id=zyx" });
 
                 // Assert
@@ -206,13 +203,26 @@ namespace UrlShortener.Web.Tests
 
         public class PostShortenedUrl
         {
+            private Mock<ICosmosStore<ShortenedUrl>> mockStore;
+            private Mock<IAliasValidator> mockValidator;
+            private Mock<IShortUrlGenerator> mockGenerator;
+            private SiteConfig config;
+            private ShortenedUrlsController sut;
+
+            public PostShortenedUrl()
+            {
+                mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
+                mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
+                mockGenerator = new Mock<IShortUrlGenerator>(MockBehavior.Strict);
+                config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
+
+                sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object, mockGenerator.Object);
+            }
+
             [Fact]
             public async Task WhenExistingLongUrlFound_ReturnOk()
             {
                 // Setup
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
-
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.Query(null)).Returns(new List<ShortenedUrl>()
                 {
                     new ShortenedUrl()
@@ -222,10 +232,7 @@ namespace UrlShortener.Web.Tests
                         LongUrl = "http://mylongurl.com/abc/?id=zyx"
                     }}.AsQueryable());
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
-
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PostShortenedUrl(new Models.NewShortenedUrl() { LongUrl = "http://mylongurl.com/abc/?id=zyx" });
 
                 // Assert
@@ -242,17 +249,13 @@ namespace UrlShortener.Web.Tests
             public async Task WhenExistingLongUrlNotFound_Creates_And_ReturnCreated()
             {
                 // Setup
-                var mockValidator = new Mock<IAliasValidator>(MockBehavior.Strict);
-
-                var mockStore = new Mock<ICosmosStore<ShortenedUrl>>(MockBehavior.Strict);
                 mockStore.Setup(_ => _.Query(null)).Returns(new List<ShortenedUrl>().AsQueryable());
                 mockStore.Setup(_ => _.AddAsync(It.IsAny<ShortenedUrl>(), null, CancellationToken.None))
                     .ReturnsAsync((Cosmonaut.Response.CosmosResponse<ShortenedUrl>)null);
 
-                var config = new SiteConfig() { ShortenUrlHostName = "https://shorturl.test.com" };
+                mockGenerator.Setup(_ => _.GenerateNewId()).Returns("myNewId");
 
                 // Action
-                var sut = new ShortenedUrlsController(mockStore.Object, config, mockValidator.Object);
                 var actionResult = await sut.PostShortenedUrl(new Models.NewShortenedUrl() { LongUrl = "http://mylongurl.com/abc/?id=zyx" });
 
                 // Assert
@@ -260,8 +263,8 @@ namespace UrlShortener.Web.Tests
                 Assert.NotNull(actionResult.Result);
                 var createResult = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
                 var returnValue = Assert.IsType<ShortenedUrl>(createResult.Value);
-                Assert.True(returnValue.Id.Length == 8);
-                Assert.Equal("https://shorturl.test.com/" + returnValue.Id, returnValue.ShortUrl);
+                Assert.Equal("myNewId", returnValue.Id);
+                Assert.Equal("https://shorturl.test.com/myNewId", returnValue.ShortUrl);
                 Assert.Equal("http://mylongurl.com/abc/?id=zyx", returnValue.LongUrl);
             }
         }

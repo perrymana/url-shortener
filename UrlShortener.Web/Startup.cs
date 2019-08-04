@@ -17,6 +17,7 @@ using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
 using Microsoft.Extensions.Logging;
 using UrlShortener.Common.Validation;
+using UrlShortener.Web.Services;
 
 namespace UrlShortener.Web
 {
@@ -77,6 +78,7 @@ namespace UrlShortener.Web
 
             // Add custom validator
             services.AddSingleton<IAliasValidator, AliasValidator>();
+            services.AddSingleton<IShortUrlGenerator, HashUrlGenerator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

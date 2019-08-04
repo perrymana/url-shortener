@@ -26,12 +26,6 @@
             <param name="newShortenedUrl">Object containing the url to shorten</param>
             <returns></returns>
         </member>
-        <member name="M:UrlShortener.Web.Controllers.ShortenedUrlsController.GenerateNewId">
-            <summary>
-            Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
-            </summary>
-            <returns></returns>
-        </member>
         <member name="P:UrlShortener.Web.Models.NewShortenedUrl.LongUrl">
             <summary>
             The long url to shorten
@@ -46,6 +40,18 @@
             <summary>
             The long url to shorten
             </summary>
+        </member>
+        <member name="M:UrlShortener.Web.Services.HashUrlGenerator.GenerateNewId">
+            <summary>
+            Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:UrlShortener.Web.Services.IShortUrlGenerator.GenerateNewId">
+            <summary>
+            Generates a new id for a short url
+            </summary>
+            <returns></returns>
         </member>
     </members>
 </doc>

@@ -13,6 +13,7 @@ using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
 using UrlShortener.Common.Validation;
 using UrlShortener.Web.Models;
+using UrlShortener.Web.Services;
 
 namespace UrlShortener.Web.Controllers
 {
@@ -25,12 +26,14 @@ namespace UrlShortener.Web.Controllers
         private readonly ICosmosStore<ShortenedUrl> urlStore;
         private readonly SiteConfig configuration;
         private readonly IAliasValidator validator;
+        private readonly IShortUrlGenerator shortUrlGenerator;
 
-        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, SiteConfig configuration, IAliasValidator validator)
+        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, SiteConfig configuration, IAliasValidator validator, IShortUrlGenerator shortUrlGenerator)
         {
             this.urlStore = urlStore;
             this.configuration = configuration;
             this.validator = validator;
+            this.shortUrlGenerator = shortUrlGenerator;
         }
 
         /// <summary>
@@ -134,7 +137,7 @@ namespace UrlShortener.Web.Controllers
                 return Ok(existingShortenedUrl);
             }
 
-            var id = GenerateNewId();
+            var id = shortUrlGenerator.GenerateNewId();
             // TODO - Geneate a different id if it already exists?
             var shortenedUrl = await CreateNew(id, newShortenedUrl);
 
@@ -160,27 +163,5 @@ namespace UrlShortener.Web.Controllers
             return hostName + "/" + id;
         }
         
-        /// <summary>
-        /// Generates a new id for a short url. Utilises a hashing algorithm to generate random "enough" strings.
-        /// </summary>
-        /// <returns></returns>
-        private string GenerateNewId()
-        {
-            // TEMP - HashLongUrl
-            //byte[] buffer = Encoding.UTF8.GetBytes(System.Guid.NewGuid().ToByteArray);
-            byte[] buffer = System.Guid.NewGuid().ToByteArray();
-
-            var sha1 = System.Security.Cryptography.SHA1.Create();
-
-            var hash = sha1.ComputeHash(buffer);
-            var hashString = Convert.ToBase64String(hash);
-
-            // Replace "/" with -
-            hashString = hashString.Replace("/", "-");
-
-            // Grab the first 8 characters from hash as a our id.
-            return hashString.Substring(0, 8);
-        }
-
     }
 }
