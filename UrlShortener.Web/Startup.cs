@@ -15,21 +15,27 @@ using Cosmonaut.Extensions.Microsoft.DependencyInjection;
 using Cosmonaut;
 using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
+using Microsoft.Extensions.Logging;
 
 namespace UrlShortener.Web
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, ILogger<Startup> logger)
         {
             Configuration = configuration;
+            Logger = logger;
         }
 
         public IConfiguration Configuration { get; }
+        public ILogger<Startup> Logger { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            this.Logger.LogInformation("Config: {ShortenUrlHostName}", this.Configuration.GetValue<string>("ShortenUrlHostName"));
+
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // In production, the React files will be served from this directory
@@ -38,7 +44,14 @@ namespace UrlShortener.Web
                 configuration.RootPath = "ClientApp/build";
             });
 
-            var cosmosConfig = Configuration.GetSection("Cosmos").Get<CosmosConfig>();
+            var cosmosConfig = Configuration.GetSection("Cosmos")?.Get<CosmosConfig>();
+
+            this.Logger.LogInformation("Connecting to Cosmos DB {DatabaseName} at {CosmosUri}", cosmosConfig?.DatabaseName, cosmosConfig?.CosmosUri);
+            if (cosmosConfig == null || string.IsNullOrEmpty(cosmosConfig.DatabaseName) || string.IsNullOrEmpty(cosmosConfig.CosmosUri) || string.IsNullOrEmpty(cosmosConfig.AuthKey))
+            {
+                throw new ApplicationException("Cosmos Configuration Invalid");
+            }
+
             var cosmosSettings = new CosmosStoreSettings(cosmosConfig.DatabaseName, cosmosConfig.CosmosUri, cosmosConfig.AuthKey, settings =>
             {
                 //settings.ConnectionPolicy = connectionPolicy;
@@ -105,16 +118,15 @@ namespace UrlShortener.Web
 
             });
 
-            //app.UseSpa(spa =>
-            //{
-            //    spa.Options.SourcePath = "ClientApp";
-            //    //spa.Options.
+            app.UseSpa(spa =>
+            {
+                spa.Options.SourcePath = "ClientApp";
 
-            //    if (env.IsDevelopment())
-            //    {
-            //        spa.UseReactDevelopmentServer(npmScript: "start");
-            //    }
-            //});
+                if (env.IsDevelopment())
+                {
+                    spa.UseReactDevelopmentServer(npmScript: "start");
+                }
+            });
         }
     }
 }

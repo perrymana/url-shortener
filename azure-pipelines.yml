@@ -63,18 +63,20 @@ stages:
       runOnce:
         deploy:
           steps:
-          - task: FileTransform@1
-            inputs:
-              folderPath: '$(Pipeline.Workspace)/WebApp/UrlShortener.Web.zip'
-          - task: FileTransform@1
-            inputs:
-              folderPath: '$(Pipeline.Workspace)/WebApp/UrlShortener.Redirect.zip'
+#          - task: FileTransform@1
+#            inputs:
+#              folderPath: '$(Pipeline.Workspace)/WebApp/UrlShortener.Web.zip'
+#          - task: FileTransform@1
+#            inputs:
+#              folderPath: '$(Pipeline.Workspace)/WebApp/UrlShortener.Redirect.zip'
+
           - task: AzureRmWebAppDeployment@3
             inputs:
               azureSubscription: '$(azureSubscription)'
               WebAppName: '$(webAppName)'
               Package: $(Pipeline.Workspace)/WebApp/UrlShortener.Web.zip
               RemoveAdditionalFilesFlag: true
+
           - task: AzureRmWebAppDeployment@3
             inputs:
               azureSubscription: '$(azureSubscription)'
