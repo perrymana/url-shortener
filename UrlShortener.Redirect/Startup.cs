@@ -13,6 +13,7 @@ using UrlShortener.Common.Data;
 using Cosmonaut;
 using Cosmonaut.Extensions.Microsoft.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using UrlShortener.Common.Validation;
 
 namespace UrlShortener.Redirect
 {
@@ -50,6 +51,8 @@ namespace UrlShortener.Redirect
             });
             services.AddCosmosStore<ShortenedUrl>(cosmosSettings);
 
+            // Add custom validator
+            services.AddSingleton<IAliasValidator, AliasValidator>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

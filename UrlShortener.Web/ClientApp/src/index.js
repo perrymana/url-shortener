@@ -28,6 +28,6 @@ ReactDOM.render(
   </Provider>,
   rootElement);
 
-// Service worker seems to conflict with my other MVC routes, like /swagger and /api. ??? Or something else??? Not interested in a progressive web app at this time.
+// The Service worker was causing me issues early on and it seems redundant to create a offline app for a url shortener service.
 //registerServiceWorker();
 unregister();

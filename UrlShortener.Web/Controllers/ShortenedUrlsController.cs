@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using UrlShortener.Common.Config;
 using UrlShortener.Common.Data;
 using UrlShortener.Common.Validation;
 using UrlShortener.Web.Models;
@@ -22,12 +23,14 @@ namespace UrlShortener.Web.Controllers
     public class ShortenedUrlsController : ControllerBase
     {
         private readonly ICosmosStore<ShortenedUrl> urlStore;
-        private readonly IConfiguration configuration;
+        private readonly SiteConfig configuration;
+        private readonly IAliasValidator validator;
 
-        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, IConfiguration configuration)
+        public ShortenedUrlsController(ICosmosStore<ShortenedUrl> urlStore, SiteConfig configuration, IAliasValidator validator)
         {
             this.urlStore = urlStore;
             this.configuration = configuration;
+            this.validator = validator;
         }
 
         /// <summary>
@@ -36,6 +39,9 @@ namespace UrlShortener.Web.Controllers
         /// <param name="id">Url id that gets added to the hostname</param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> GetShortenedUrl([FromRoute] string id)
         {
             if (!ModelState.IsValid)
@@ -43,7 +49,7 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasValidation.IsValid(id))
+            if (!validator.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }
@@ -65,6 +71,10 @@ namespace UrlShortener.Web.Controllers
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> PutShortenedUrl([FromRoute] string id, [FromBody] NewShortenedUrl newShortenedUrl)
         {
             if (!ModelState.IsValid)
@@ -72,27 +82,29 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (!AliasValidation.IsValid(id))
+            if (!validator.IsValid(id))
             {
                 return BadRequest("Invalid Id Format");
             }
 
-            try
+            // Check to see if a shortened url with this id already exists.
+            // (Yeah, there is a minor race condition here)
+            var existingShortenedUrl = await urlStore.FindAsync(id);
+            if (existingShortenedUrl != null)
             {
-                ShortenedUrl shortenedUrl = await CreateNew(id, newShortenedUrl);
-                return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
-            }
-            catch (DbUpdateException e)
-            {
-                if (e.InnerException?.Message.Contains("Violation of PRIMARY KEY constraint", StringComparison.InvariantCultureIgnoreCase) == true)
+                // It does, but does the long url match?
+                if (existingShortenedUrl.LongUrl == newShortenedUrl.LongUrl)
                 {
-                    return Conflict("Already exists");
+                    return Ok(existingShortenedUrl);
                 }
                 else
                 {
-                    throw;
+                    return Conflict("Already exists");
                 }
             }
+
+            ShortenedUrl shortenedUrl = await CreateNew(id, newShortenedUrl);
+            return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
 
         /// <summary>
@@ -101,6 +113,9 @@ namespace UrlShortener.Web.Controllers
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
         /// <returns></returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ShortenedUrl>> PostShortenedUrl([FromBody] NewShortenedUrl newShortenedUrl)
         {
             if (!ModelState.IsValid)
@@ -109,18 +124,19 @@ namespace UrlShortener.Web.Controllers
             }
 
             // See if we have already registered this particular url. If we have return it without generating a new one.
+            // (Yeah, there is a minor race condition here)
 
             // Unfortunately I can't get the async versions to work...
             //var shortenedUrl = await urlStore.Query().FirstOrDefaultAsync(x => x.LongUrl == newShortenedUrl.LongUrl);
-            var shortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
-
-            if (shortenedUrl  == null)
+            var existingShortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
+            if (existingShortenedUrl != null)
             {
-                var id = GenerateNewId();
-                // TODO - Geneate a different id if it already exists?
-
-                shortenedUrl = await CreateNew(id, newShortenedUrl);
+                return Ok(existingShortenedUrl);
             }
+
+            var id = GenerateNewId();
+            // TODO - Geneate a different id if it already exists?
+            var shortenedUrl = await CreateNew(id, newShortenedUrl);
 
             return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
@@ -140,7 +156,7 @@ namespace UrlShortener.Web.Controllers
 
         private string BuildShortUrl(string id)
         {
-            var hostName = this.configuration.GetValue<string>("ShortenUrlHostName");  //  "https://localhost:5001"; // TODO
+            var hostName = this.configuration.ShortenUrlHostName;
             return hostName + "/" + id;
         }
         
@@ -166,9 +182,5 @@ namespace UrlShortener.Web.Controllers
             return hashString.Substring(0, 8);
         }
 
-        //private bool ShortenedUrlExists(string id)
-        //{
-        //    return _context.ShortenedUrl.Any(e => e.Id == id);
-        //}
     }
 }

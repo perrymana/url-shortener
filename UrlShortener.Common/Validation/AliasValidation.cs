@@ -5,14 +5,17 @@ using System.Text.RegularExpressions;
 
 namespace UrlShortener.Common.Validation
 {
-    public static class AliasValidation
+    public class AliasValidator : IAliasValidator
     {
 
         private const string AliasRegexStr = "^[a-zA-Z0-9+\\-=]*$"; // TODO - Move
         private static Regex AliasRegex = new Regex(AliasRegexStr); // TODO - Move
 
-        public static bool IsValid(string id)
+        public bool IsValid(string id)
         {
+            if (string.IsNullOrEmpty(id))
+                return false;
+
             return AliasRegex.IsMatch(id);
         }
 
