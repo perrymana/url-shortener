@@ -17,6 +17,9 @@ using UrlShortener.Web.Services;
 
 namespace UrlShortener.Web.Controllers
 {
+    /// <summary>
+    /// Primary API Controller for creating and retrieving shortened urls.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Consumes("application/json")]
@@ -68,7 +71,7 @@ namespace UrlShortener.Web.Controllers
         }
 
         /// <summary>
-        /// Creates new shortened url with supplied id
+        /// Creates new shortened url with a supplied id
         /// </summary>
         /// <param name="id">Url id that gets added to the hostname</param>
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
@@ -111,7 +114,7 @@ namespace UrlShortener.Web.Controllers
         }
 
         /// <summary>
-        /// Creates new shortened url with random id
+        /// Creates new shortened url with a random id
         /// </summary>
         /// <param name="newShortenedUrl">Object containing the url to shorten</param>
         /// <returns></returns>
@@ -144,6 +147,12 @@ namespace UrlShortener.Web.Controllers
             return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
 
+        /// <summary>
+        /// Creates new entry in data store
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="newShortenedUrl"></param>
+        /// <returns></returns>
         private async Task<ShortenedUrl> CreateNew(string id, NewShortenedUrl newShortenedUrl)
         {
             var shortenedUrl = new ShortenedUrl()
@@ -157,6 +166,11 @@ namespace UrlShortener.Web.Controllers
             return shortenedUrl;
         }
 
+        /// <summary>
+        /// Combines short url id with the root hostname.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         private string BuildShortUrl(string id)
         {
             var hostName = this.configuration.ShortenUrlHostName;

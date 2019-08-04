@@ -62,8 +62,8 @@ stages:
     - task: Palmmedia.reportgenerator.reportgenerator-build-release-task.reportgenerator@4
       displayName: Merge Test Coverage Results
       inputs:
-        reports: '$(System.SourcesDirectory)/**/coverage.cobertura.xml'
-        targetdir: '$(Build.SourcesDirectory)/CodeCoverage'
+        reports: '$(Agent.TempDirectory)/**/coverage.cobertura.xml'
+        targetdir: '$(Agent.TempDirectory)/MergedCodeCoverage'
         reporttypes: 'HtmlInline_AzurePipelines;Cobertura;Badges'
         assemblyfilters: '-xunit*'
 
@@ -71,8 +71,8 @@ stages:
       displayName: 'Publish Code Coverage'
       inputs:
         codeCoverageTool: 'cobertura'
-        summaryFileLocation: '$(Build.SourcesDirectory)/CodeCoverage/Cobertura.xml'
-        reportDirectory: '$(Build.SourcesDirectory)/CodeCoverage'  
+        summaryFileLocation: '$(Agent.TempDirectory)/MergedCodeCoverage/Cobertura.xml'
+        reportDirectory: '$(Agent.TempDirectory)/MergedCodeCoverage'  
 
 
 - stage: Deploy
