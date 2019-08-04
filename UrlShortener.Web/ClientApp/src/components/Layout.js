@@ -14,3 +14,17 @@ export default props => (
     </Row>
   </Grid>
 );
+
+//export default props => (
+//    <Grid fluid>
+//        <Row>
+//            <h1>Smaller Url</h1>
+//        </Row>
+//        <Row>
+//            <Col>
+//                {props.children}
+//            </Col>
+//        </Row>
+//    </Grid>
+
+//);

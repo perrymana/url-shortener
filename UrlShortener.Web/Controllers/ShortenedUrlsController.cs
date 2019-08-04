@@ -108,11 +108,19 @@ namespace UrlShortener.Web.Controllers
                 return BadRequest(ModelState);
             }
 
-            var id = GenerateNewId();
-            // TODO - Geneate a different id if it already exists?
+            // See if we have already registered this particular url. If we have return it without generating a new one.
 
-            ShortenedUrl shortenedUrl = await CreateNew(id, newShortenedUrl);
+            // Unfortunately I can't get the async versions to work...
+            //var shortenedUrl = await urlStore.Query().FirstOrDefaultAsync(x => x.LongUrl == newShortenedUrl.LongUrl);
+            var shortenedUrl = urlStore.Query().Where(x => x.LongUrl == newShortenedUrl.LongUrl).ToList().FirstOrDefault();
 
+            if (shortenedUrl  == null)
+            {
+                var id = GenerateNewId();
+                // TODO - Geneate a different id if it already exists?
+
+                shortenedUrl = await CreateNew(id, newShortenedUrl);
+            }
 
             return CreatedAtAction("GetShortenedUrl", new { id = shortenedUrl.Id }, shortenedUrl);
         }
